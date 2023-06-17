@@ -6,16 +6,30 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="{{ asset('asset/node_modules/bootstrap/dist/css/bootstrap.css') }}" />
-
-
-
     <title>tableau</title>
 </head>
+{% for message in app.session.flashBag.get('info')  %}
+<div class="alert alert-info">
+    {{ message }}
+</div>
+{% endfor %}
+{% for message in app.session.flashBag.get('erreur')  %}
+    <div class="alert alert-danger">
+        {{ message }}
+    </div>
+{% endfor %}
+{% for message in app.session.flashBag.get('succes')  %}
+    <div class="alert alert-success">
+        {{ message }}
+    </div>
+{% endfor %}
 <body>
+<h1>liste des todo: </h1>
+
 <ol class="list-group">
     {% for cle,element in app.session.get('tableau') %}
         <li class="list-group-item">
-            {{ cle }}:{{ element }}
+            {{ cle }}:  {{ element }}
         </li>
 
     {% endfor %}
