@@ -24,4 +24,10 @@ class FirstController extends AbstractController
         return $this->render('first/bonjour.html.twig',['nom'=>$name]);
 
     }
+    #[Route('/multiplication/{entier1<\d+>}/{entier2<\d+>}', name: 'multi')]
+    public function multiplication($entier1,$entier2){
+        $resultat=$entier1*$entier2;
+        return new Response("<h1>$resultat</h1>");
+
+    }
 }
