@@ -1,0 +1,29 @@
+{% extends 'template.html.twig' %}
+
+{% block titlePage  %}
+tableau utilisateur
+{% endblock %}
+{% block body %}
+    {{ include('fragment/dateJour.html.twig') }}
+
+<table class="table">
+    <tr class="table-active">
+        <td>prénom</td>
+        <td>age</td>
+        <td>nom</td>
+        <td>utilisateur</td>
+    </tr>
+    {%for user in users%}
+    <tr class="table-{% if (loop.index is odd) %}danger {% else  %}warning{% endif %}">
+        <td>{{ user.firstname }}</td>
+        <td>{{ user.age }}</td>
+        <td>{{ user.name }}</td>
+        <td>{{ render(controller('App\\Controller\\FirstController::bonjour', { 'name': user.name, 'prenom': user.firstname })) }}</td>
+
+
+
+    </tr>
+    {% endfor  %}
+
+</table>
+{% endblock %}
