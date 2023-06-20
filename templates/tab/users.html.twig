@@ -5,7 +5,11 @@ tableau utilisateur
 {% endblock %}
 {% block body %}
     {{ include('fragment/dateJour.html.twig') }}
-
+<div class="alert alert-warning">
+    <a href="{{ path('app_tab',{nb:5}) }}">
+stats du tableau
+    </a>
+</div>
 <table class="table">
     <tr class="table-active">
         <td>prénom</td>
