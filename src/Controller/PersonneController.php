@@ -51,7 +51,7 @@ class PersonneController extends AbstractController
 
     }
 
-    #[Route('/personne', name: 'app_personne')]
+    #[Route('/add', name: 'addpersonne')]
     public function addPersonne(ManagerRegistry $doctrine): Response
     {
         $entityManager = $doctrine->getManager();
@@ -125,5 +125,16 @@ class PersonneController extends AbstractController
         return $this->render('personne/index.html.twig', ['personne' => $personne]);
 
     }
+    #[Route('/stat/age/{agemin}/{agemax}', name: 'personne.list.stat')]
+    public function statage(ManagerRegistry $doctrine, $agemin, $agemax)
+    {
+        $repository = $doctrine->getRepository(Personne::class);
+        $stats = $repository->statPersonnesByAge($agemin,$agemax);
 
+        return $this->render('personne/stats.html.twig', ['stats' => $stats[0],
+        'ageMin'=>$agemin,
+            'ageMax'=>$agemax
+        ]);
+
+    }
 }

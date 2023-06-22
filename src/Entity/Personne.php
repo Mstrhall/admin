@@ -3,9 +3,13 @@
 namespace App\Entity;
 
 use App\Repository\PersonneRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PersonneRepository::class)]
+#[ORM\HasLifecycleCallbacks()]
 class Personne
 {
     #[ORM\Id]
@@ -21,8 +25,27 @@ class Personne
     #[ORM\Column(type: 'smallint')]
     private $age;
 
-    #[ORM\Column(length: 70, nullable: true)]
-    private ?string $travail = null;
+
+
+    #[ORM\OneToOne(inversedBy: 'personne', cascade: ['persist', 'remove'])]
+    private ?Profil $profil = null;
+
+    #[ORM\ManyToMany(targetEntity: Hobby::class)]
+    private Collection $hobbies;
+
+    #[ORM\ManyToOne(inversedBy: 'personnes')]
+    private ?Job $job = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTime $createdAt = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTime $updateAt = null;
+
+    public function __construct()
+    {
+        $this->hobbies = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -62,15 +85,86 @@ class Personne
         $this->age = $age;
     }
 
-    public function getTravail(): ?string
+
+    public function getProfil(): ?Profil
     {
-        return $this->travail;
+        return $this->Profil;
     }
 
-    public function setTravail(?string $travail): static
+    public function setProfil(?Profil $profil): static
     {
-        $this->travail = $travail;
+        $this->Profil = $profil;
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, Hobby>
+     */
+    public function getHobbies(): Collection
+    {
+        return $this->hobbies;
+    }
+
+    public function addHobby(Hobby $hobby): static
+    {
+        if (!$this->hobbies->contains($hobby)) {
+            $this->hobbies->add($hobby);
+        }
+
+        return $this;
+    }
+
+    public function removeHobby(Hobby $hobby): static
+    {
+        $this->hobbies->removeElement($hobby);
+
+        return $this;
+    }
+
+    public function getJob(): ?Job
+    {
+        return $this->job;
+    }
+
+    public function setJob(?Job $job): static
+    {
+        $this->job = $job;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(?\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdateAt(): ?\DateTimeInterface
+    {
+        return $this->updateAt;
+    }
+
+    public function setUpdateAt(?\DateTimeInterface $updateAt): static
+    {
+        $this->updateAt = $updateAt;
+
+        return $this;
+    }
+    #[ORM\PrePersist()]
+    public function onPrePersist(){
+        $this->createdAt=new \DateTime();
+        $this->updateAt=new \DateTime();
+    }
+    #[ORM\PreUpdate()]
+    public function onPreUpdate(){
+
+        $this->updateAt=new \DateTime();
     }
 }
