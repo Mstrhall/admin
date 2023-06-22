@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use App\Entity\Personne;
 use App\Form\PersonneFormType;
+use App\Service\Helpers;
+use App\Service\UploaderServices;
 use Doctrine\Persistence\ManagerRegistry;
-
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request; // Importez la classe correcte
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -16,9 +18,15 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 #[Route('/personne')]
 class PersonneController extends AbstractController
 {
+
+    public function __construct(private LoggerInterface $logger,private Helpers $helpers)
+    {
+    }
+
     #[Route('/', name: 'personne.list')]
     public function index(ManagerRegistry $doctrine)
     {
+
         $repository = $doctrine->getRepository(Personne::class);
         $personne = $repository->findAll();
         return $this->render('personne/index.html.twig', ['personne' => $personne]);
@@ -31,6 +39,8 @@ class PersonneController extends AbstractController
         $repository = $doctrine->getRepository(Personne::class);
         $nbPersonne = $repository->count([]);
         $nbrePages = ceil(($nbPersonne / $nbre));
+
+        echo $this->helpers->saycc();
         $personne = $repository->findBy([], [], $nbre, ($pages - 1) * $nbre);
         return $this->render('personne/index.html.twig', [
             'personne' => $personne,
@@ -57,7 +67,7 @@ class PersonneController extends AbstractController
     }
 
     #[Route('/edit/{id?0}', name: 'edit.personne')]
-    public function addPersonne(int $id, ManagerRegistry $doctrine, Request $request,SluggerInterface $slugger): Response
+    public function addPersonne(int $id, ManagerRegistry $doctrine, Request $request,UploaderServices $uploaderService): Response
     {
         $entityManager = $doctrine->getManager();
 
@@ -83,24 +93,8 @@ class PersonneController extends AbstractController
             // this condition is needed because the 'brochure' field is not required
             // so the PDF file must be processed only when a file is uploaded
             if ($image) {
-                $originalFilename = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
-                // this is needed to safely include the file name as part of the URL
-                $safeFilename = $slugger->slug($originalFilename);
-                $newFilename = $safeFilename.'-'.uniqid().'.'.$image->guessExtension();
-
-                // Move the file to the directory where brochures are stored
-                try {
-                    $image->move(
-                        $this->getParameter('personne_directory'),
-                        $newFilename
-                    );
-                } catch (FileException $e) {
-                    // ... handle exception if something happens during file upload
-                }
-
-                // updates the 'brochureFilename' property to store the PDF file name
-                // instead of its contents
-                $personne->setimage($newFilename);
+                $directory= $this->getParameter('personne_directory');
+                $personne->setimage($uploaderService->uploadImage($image,$directory));
             }
             $entityManager->flush();
 
