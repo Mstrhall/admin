@@ -3,13 +3,16 @@
 namespace App\Entity;
 
 use App\Repository\JobRepository;
+use App\trait\timeStampTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: JobRepository::class)]
+#[ORM\HasLifecycleCallbacks()]
 class Job
 {
+    use timeStampTrait;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -72,4 +75,9 @@ class Job
 
         return $this;
     }
+    public function __toString(): string
+    {
+        return $this->designation;
+    }
+
 }

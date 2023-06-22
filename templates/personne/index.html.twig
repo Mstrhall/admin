@@ -10,8 +10,9 @@ liste des personne
             <h5 class="card-title">{{ personnes.nom }}</h5>
             <h6 class="card-subtitle mb-2 text-muted">{{ personnes.prenom }} {{ personnes.nom }}</h6>
             <p class="card-text">age: {{ personnes.age }}</p>
-            <a href="{{ path('personne.detail',{id: personnes.id}) }}" class="card-link">détail</a>
-            <a href="{{ path('delete',{id: personnes.id}) }}" class="card-link">suprimer</a>
+            <a href="{{ path('personne.detail',{id: personnes.id}) }}" class="card-link"><i class="fa-solid fa-magnifying-glass"></i></i></a>
+            <a href="{{ path('delete',{id: personnes.id}) }}" class="card-link"><i class="fa-solid fa-trash"></i></i></a>
+            <a href="{{ path('edit.personne',{id: personnes.id}) }}" class="card-link"><i class="fa-solid fa-user-pen"></i></a>
 
         </div>
     </div>
@@ -36,4 +37,11 @@ liste des personne
 
     {% endif %}
 </div>
+{% endblock %}
+{% block javascripts%}
+    <script>
+    $(document).ready(function() {
+    $('.select2').select2();
+    });
+    </script>
 {% endblock %}

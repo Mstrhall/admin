@@ -3,11 +3,14 @@
 namespace App\Entity;
 
 use App\Repository\ProfilRepository;
+use App\trait\timeStampTrait;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProfilRepository::class)]
+#[ORM\HasLifecycleCallbacks()]
 class Profil
 {
+    use timeStampTrait;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -71,5 +74,9 @@ class Profil
         $this->personne = $personne;
 
         return $this;
+    }
+    public function __toString(): string
+    {
+        return $this->reseausocial. " " ." ".$this->url;
     }
 }

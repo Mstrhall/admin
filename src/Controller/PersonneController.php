@@ -3,11 +3,16 @@
 namespace App\Controller;
 
 use App\Entity\Personne;
+use App\Form\PersonneFormType;
 use Doctrine\Persistence\ManagerRegistry;
+
+use Symfony\Component\HttpFoundation\Request; // Importez la classe correcte
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
+
 #[Route('/personne')]
 class PersonneController extends AbstractController
 {
@@ -51,30 +56,62 @@ class PersonneController extends AbstractController
 
     }
 
-    #[Route('/add', name: 'addpersonne')]
-    public function addPersonne(ManagerRegistry $doctrine): Response
+    #[Route('/edit/{id?0}', name: 'edit.personne')]
+    public function addPersonne(int $id, ManagerRegistry $doctrine, Request $request,SluggerInterface $slugger): Response
     {
         $entityManager = $doctrine->getManager();
-        $personne = new Personne();
-        $personne->setPrenom('celian');
-        $personne->setNom('laumond');
-        $personne->setAge('20');
 
-        $personne2 = new Personne();
-        $personne2->setPrenom('philippe');
-        $personne2->setNom('laumond');
-        $personne2->setAge('53');
+        if ($id !== 0) {
+            $personne = $entityManager->getRepository(Personne::class)->find($id);
 
-        //ajouter l'operation d'insertion de la personne dans ma transaction
-        $entityManager->persist($personne);
-        $entityManager->persist($personne2);
-        //execution de la requete
-        $entityManager->flush();
-        return $this->render('personne/detail.html.twig', [
-            'controller_name' => 'PersonneController',
-            'personne' => $personne
+            if (!$personne) {
+                throw $this->createNotFoundException('Personne not found');
+            }
+        } else {
+            $personne = new Personne();
+        }
+
+        $form = $this->createForm(PersonneFormType::class, $personne);
+        $form->remove('createdAt');
+        $form->remove('updateAt');
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->persist($personne);
+            $image = $form->get('image')->getData();
+
+            // this condition is needed because the 'brochure' field is not required
+            // so the PDF file must be processed only when a file is uploaded
+            if ($image) {
+                $originalFilename = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
+                // this is needed to safely include the file name as part of the URL
+                $safeFilename = $slugger->slug($originalFilename);
+                $newFilename = $safeFilename.'-'.uniqid().'.'.$image->guessExtension();
+
+                // Move the file to the directory where brochures are stored
+                try {
+                    $image->move(
+                        $this->getParameter('personne_directory'),
+                        $newFilename
+                    );
+                } catch (FileException $e) {
+                    // ... handle exception if something happens during file upload
+                }
+
+                // updates the 'brochureFilename' property to store the PDF file name
+                // instead of its contents
+                $personne->setimage($newFilename);
+            }
+            $entityManager->flush();
+
+            $this->addFlash('success', "L'utilisateur a été ajouté avec succès");
+        }
+
+        return $this->render('personne/add-personne.html.twig', [
+            'form' => $form->createView()
         ]);
     }
+
 
     #[Route('/delete/{id}', name: 'delete')]
     public function deletepersonne(ManagerRegistry $doctrine, $id): RedirectResponse

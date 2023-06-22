@@ -3,11 +3,14 @@
 namespace App\Entity;
 
 use App\Repository\HobbyRepository;
+use App\trait\timeStampTrait;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: HobbyRepository::class)]
+#[ORM\HasLifecycleCallbacks()]
 class Hobby
 {
+    use timeStampTrait;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -31,5 +34,9 @@ class Hobby
         $this->designation = $designation;
 
         return $this;
+    }
+    public function __toString(): string
+    {
+        return $this->designation;
     }
 }

@@ -3,21 +3,26 @@
 namespace App\Entity;
 
 use App\Repository\PersonneRepository;
+use App\trait\timeStampTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PersonneRepository::class)]
 #[ORM\HasLifecycleCallbacks()]
 class Personne
 {
+    use timeStampTrait;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank(message: "merci de remplir le champ")]
+    #[Assert\Length(min: 4,minMessage: "merci de remplir au moins 4 caractere")]
     private ?string $prenom = null;
 
     #[ORM\Column(length: 50)]
@@ -36,11 +41,10 @@ class Personne
     #[ORM\ManyToOne(inversedBy: 'personnes')]
     private ?Job $job = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?\DateTime $createdAt = null;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updateAt = null;
+
 
     public function __construct()
     {
@@ -88,12 +92,12 @@ class Personne
 
     public function getProfil(): ?Profil
     {
-        return $this->Profil;
+        return $this->profil;
     }
 
     public function setProfil(?Profil $profil): static
     {
-        $this->Profil = $profil;
+        $this->profil = $profil;
 
         return $this;
     }
@@ -134,37 +138,18 @@ class Personne
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getImage(): ?string
     {
-        return $this->createdAt;
+        return $this->image;
     }
 
-    public function setCreatedAt(?\DateTimeImmutable $createdAt): static
+    public function setImage(?string $image): static
     {
-        $this->createdAt = $createdAt;
+        $this->image = $image;
 
         return $this;
     }
 
-    public function getUpdateAt(): ?\DateTimeInterface
-    {
-        return $this->updateAt;
-    }
 
-    public function setUpdateAt(?\DateTimeInterface $updateAt): static
-    {
-        $this->updateAt = $updateAt;
 
-        return $this;
-    }
-    #[ORM\PrePersist()]
-    public function onPrePersist(){
-        $this->createdAt=new \DateTime();
-        $this->updateAt=new \DateTime();
-    }
-    #[ORM\PreUpdate()]
-    public function onPreUpdate(){
-
-        $this->updateAt=new \DateTime();
-    }
 }
