@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Personne;
 use App\Form\PersonneFormType;
 use App\Service\Helpers;
+use App\Service\PdfService;
 use App\Service\UploaderServices;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
@@ -32,6 +33,27 @@ class PersonneController extends AbstractController
         return $this->render('personne/index.html.twig', ['personne' => $personne]);
 
     }
+    #[Route('/pdf/{id}', name: 'personne.pdf')]
+    public function generePDF(ManagerRegistry $doctrine,$id, PdfService $pdf)
+    {
+        $repository = $doctrine->getRepository(Personne::class);
+        $personne = $repository->find($id);
+        if (!$personne) {
+            // Gérer le cas où l'objet $personne est nul
+            // Par exemple, rediriger vers une autre page ou afficher un message d'erreur
+            return $this->redirectToRoute('personne.list.all');
+        }
+
+
+        $code = $this->render('personne/detail.html.twig', ['personne' => $personne])->getContent();
+        $pdf->showPdf($code);
+
+        // Autres actions si nécessaire
+
+        return new Response(); // Vous pouvez retourner une réponse vide si vous n'avez pas besoin de renvoyer une vue spécifique
+    }
+
+
 
     #[Route('/all/{pages?1}/{nbre?12}', name: 'personne.list.all')]
     public function indexall(ManagerRegistry $doctrine, $pages, $nbre)
@@ -40,7 +62,7 @@ class PersonneController extends AbstractController
         $nbPersonne = $repository->count([]);
         $nbrePages = ceil(($nbPersonne / $nbre));
 
-        echo $this->helpers->saycc();
+      
         $personne = $repository->findBy([], [], $nbre, ($pages - 1) * $nbre);
         return $this->render('personne/index.html.twig', [
             'personne' => $personne,
@@ -53,7 +75,7 @@ class PersonneController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'personne.detail')]
-    public function detail(ManagerRegistry $doctrine, $id)
+    public function detail(ManagerRegistry $doctrine, $id,PdfService $pdf)
     {
         $repository = $doctrine->getRepository(Personne::class);
         $personne = $repository->find($id);
@@ -62,6 +84,7 @@ class PersonneController extends AbstractController
             return $this->redirectToRoute('personne.list');
             $this->addFlash('error', "la personne id $id nexiste pas ");
         }
+
         return $this->render('personne/detail.html.twig', ['personne' => $personne]);
 
     }
