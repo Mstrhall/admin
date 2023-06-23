@@ -3,24 +3,27 @@
 namespace App\Controller;
 
 use App\Entity\Personne;
+use App\Events\AddPersonneEvents;
 use App\Form\PersonneFormType;
 use App\Service\Helpers;
 use App\Service\PdfService;
 use App\Service\UploaderServices;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request; // Importez la classe correcte
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/personne')]
 class PersonneController extends AbstractController
 {
 
-    public function __construct(private LoggerInterface $logger,private Helpers $helpers)
+    public function __construct(private LoggerInterface $logger,private Helpers $helpers,private EventDispatcherInterface $dispatcher)
     {
     }
 
@@ -90,7 +93,7 @@ class PersonneController extends AbstractController
     }
 
     #[Route('/edit/{id?0}', name: 'edit.personne')]
-    public function addPersonne(int $id, ManagerRegistry $doctrine, Request $request,UploaderServices $uploaderService): Response
+    public function addPersonne(int $id, ManagerRegistry $doctrine, Request $request, UploaderServices $uploaderService): Response
     {
         $entityManager = $doctrine->getManager();
 
@@ -98,10 +101,12 @@ class PersonneController extends AbstractController
             $personne = $entityManager->getRepository(Personne::class)->find($id);
 
             if (!$personne) {
+                $new = false;
                 throw $this->createNotFoundException('Personne not found');
             }
         } else {
             $personne = new Personne();
+            $new = true;
         }
 
         $form = $this->createForm(PersonneFormType::class, $personne);
@@ -113,21 +118,29 @@ class PersonneController extends AbstractController
             $entityManager->persist($personne);
             $image = $form->get('image')->getData();
 
-            // this condition is needed because the 'brochure' field is not required
-            // so the PDF file must be processed only when a file is uploaded
+            // This condition is needed because the 'image' field is not required
+            // so the image file must be processed only when a file is uploaded
             if ($image) {
-                $directory= $this->getParameter('personne_directory');
-                $personne->setimage($uploaderService->uploadImage($image,$directory));
+                $directory = $this->getParameter('personne_directory');
+                $personne->setImage($uploaderService->uploadImage($image, $directory));
+            }
+            if ($new) {
+                $personne->setCreatedBy($this->getUser());
             }
             $entityManager->flush();
-
+            if ($new) {
+                $addPersonneEvent=new AddPersonneEvents($personne);
+                $this->dispatcher->dispatch($addPersonneEvent,AddPersonneEvents::ADD_PERSONNE_EVENT);
+            }
             $this->addFlash('success', "L'utilisateur a été ajouté avec succès");
+            return $this->redirectToRoute('personne.list');
         }
 
         return $this->render('personne/add-personne.html.twig', [
             'form' => $form->createView()
         ]);
     }
+
 
 
     #[Route('/delete/{id}', name: 'delete')]
